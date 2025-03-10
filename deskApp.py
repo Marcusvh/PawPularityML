@@ -7,6 +7,8 @@ from sklearn.linear_model import LinearRegression
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
 
+import tkinterLib as tLib
+
 def browseFiles():
     filename = filedialog.askopenfilename(initialdir=f"{os.getcwd}", 
                                           title="Select a file", 
@@ -34,31 +36,8 @@ def browseFiles():
         rmse = mse ** 0.5  # Square root of MSE
         r2 = r2_score(test_y, pred_y)  # R² score (goodness of fit)
 
-        # adding labels to show the result.
-        title_label = tk.Label(window, text="Model Performance Metrics", font=("Arial", 14, "bold"))
-        title_label.grid(column=0, row=5, columnspan=5, pady=10)
-
-        LinearText = tk.Label(window, text="Errors when using LinearRegression", font=("Arial", 12, "italic"))
-        LinearText.grid(column=0, row=6, columnspan=5, pady=5)
-
-        r2Score = tk.Label(window, text=f"R² Score: {r2:.5f}", font=("Arial", 10, "bold"), anchor="w", padx=10)
-        r2Score.grid(column=0, row=7, sticky="w", pady=5)
-
-        rmseScore = tk.Label(window, text=f"Root Mean Squared Error (RMSE): {rmse:.5f}", font=("Arial", 10, "bold"), anchor="w", padx=10)
-        rmseScore.grid(column=0, row=8, sticky="w", pady=5)
-
-        mseScore = tk.Label(window, text=f"Mean Squared Error (MSE): {mse:.5f}", font=("Arial", 10, "bold"), anchor="w", padx=10)
-        mseScore.grid(column=0, row=9, sticky="w", pady=5)
-
-        maeScore = tk.Label(window, text=f"Mean Absolute Error (MAE): {mae:.5f}", font=("Arial", 10, "bold"), anchor="w", padx=10)
-        maeScore.grid(column=0, row=10, sticky="w", pady=5)
-
-        # extra config
-        r2Score.config(bg="lightblue")
-        rmseScore.config(bg="lightyellow")
-        mseScore.config(bg="lightgreen")
-        maeScore.config(bg="lightcoral")
-
+        tLib.BrowseFilesDisplayErros(linear_frame, tk, mae, mse, rmse, r2)
+        
         label_file_explorer.config(text="File Opened: " + filename)
         display_table(df)
 
@@ -91,17 +70,34 @@ window = tk.Tk()
 window.title("Paw Pularity")
 window.geometry("800x500")
 
-label_file_explorer = tk.Label(window, text="File Explorer using Tkinter", width=100, height=2, fg="blue")
-label_file_explorer.grid(column=1, row=1)
+# to make tabs (is a widget)
+notebook = ttk.Notebook(window)
+notebook.pack(padx=10, pady=10, expand=True, fill="both")
 
-button_explore = tk.Button(window, text="Browse Files", command=browseFiles)
-button_explore.grid(column=1, row=2)
+# linear tab
+linear_frame = ttk.Frame(notebook)
+linear_frame.pack(fill="both", expand=True)
 
-button_exit = tk.Button(window, text="Exit", command=window.quit)
-button_exit.grid(column=1, row=3)
+# logistic tab
+logistic_frame = ttk.Frame(notebook)
+linear_frame.pack(fill="both", expand=True)
+
+# File Explorer label
+label_file_explorer = tk.Label(linear_frame, text="File Explorer using Tkinter", width=100, height=2, fg="blue")
+label_file_explorer.grid(column=0, row=1, columnspan=5, pady=10)
+
+button_explore = tk.Button(linear_frame, text="Browse Files", command=browseFiles)
+button_explore.grid(column=0, row=2, columnspan=5, pady=10)
+
+button_exit = tk.Button(linear_frame, text="Exit", command=window.quit)
+button_exit.grid(column=0, row=3, columnspan=5, pady=10)
 
 # Frame for Table Display
-frame_table = tk.Frame(window)
+frame_table = tk.Frame(linear_frame)
 frame_table.grid(column=0, row=4, columnspan=3, padx=10, pady=10, sticky="nsew")
+
+# Add tabs to the Notebook widget
+notebook.add(linear_frame, text="Linear Regression")
+notebook.add(logistic_frame, text="Logistic Regression")
 
 window.mainloop()
