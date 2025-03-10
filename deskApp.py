@@ -3,11 +3,13 @@ from tkinter import filedialog, ttk
 import pandas as pd
 import os
 from pathlib import Path
-from sklearn.linear_model import LinearRegression
+from sklearn.linear_model import LinearRegression, LogisticRegression
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
 
 import tkinterLib as tLib
+
+notebookFrameNames = ["Linear Regression", "Logistic Regression"]
 
 def browseFiles():
     filename = filedialog.askopenfilename(initialdir=f"{os.getcwd}", 
@@ -16,30 +18,42 @@ def browseFiles():
 
     if filename:  # Proceed only if a file is selected
         df = pd.read_csv(filename)
-
-        # Prepare X and y
-        X = df.iloc[:,1:-1]
-        y = df.iloc[:,-1]
-
-        # Do train test split
-        train_x, test_x, train_y, test_y = train_test_split(X, y, test_size=0.2, random_state=42)
-
-        reg = LinearRegression()
-        reg.fit(train_x, train_y)
-
-        pred_y = reg.predict(test_x)
-        from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
-
-        # Calculate regression metrics
-        mae = mean_absolute_error(test_y, pred_y)
-        mse = mean_squared_error(test_y, pred_y)
-        rmse = mse ** 0.5  # Square root of MSE
-        r2 = r2_score(test_y, pred_y)  # R² score (goodness of fit)
-
-        tLib.BrowseFilesDisplayErros(linear_frame, tk, mae, mse, rmse, r2)
-        
         label_file_explorer.config(text="File Opened: " + filename)
         display_table(df)
+
+        selected_tab = notebook.index(notebook.select())  # Get index of selected tab
+    
+        match selected_tab: 
+            case 0:
+                from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+                train_x, test_x, train_y, test_y, pred_y = prepAndTrainCSVForLinearRegression(df)
+
+                # Calculate regression error metrics
+                mae = mean_absolute_error(test_y, pred_y)
+                mse = mean_squared_error(test_y, pred_y)
+                rmse = mse ** 0.5  # Square root of MSE
+                r2 = r2_score(test_y, pred_y)  # R² score (goodness of fit)
+
+                tLib.BrowseFilesDisplayErros(linear_frame, tk, mae, mse, rmse, r2)
+            case 1:
+                print("hewwo")
+            case _: 
+                print("default/no match")
+            
+def prepAndTrainCSVForLinearRegression(df):
+
+    # Prepare X and y
+    X = df.iloc[:,1:-1]
+    y = df.iloc[:,-1]
+
+    # Do train test split
+    train_x, test_x, train_y, test_y = train_test_split(X, y, test_size=0.2, random_state=42)
+
+    reg = LinearRegression()
+    reg.fit(train_x, train_y)
+
+    pred_y = reg.predict(test_x)
+    return train_x, test_x, train_y, test_y, pred_y
 
 def display_table(df):
     # Clear existing table (if any)
@@ -63,8 +77,6 @@ def display_table(df):
 
     tree.pack(expand=True, fill="both")
 
-
-
 # Tkinter Window Setup
 window = tk.Tk()
 window.title("Paw Pularity")
@@ -82,22 +94,14 @@ linear_frame.pack(fill="both", expand=True)
 logistic_frame = ttk.Frame(notebook)
 linear_frame.pack(fill="both", expand=True)
 
-# File Explorer label
-label_file_explorer = tk.Label(linear_frame, text="File Explorer using Tkinter", width=100, height=2, fg="blue")
-label_file_explorer.grid(column=0, row=1, columnspan=5, pady=10)
-
-button_explore = tk.Button(linear_frame, text="Browse Files", command=browseFiles)
-button_explore.grid(column=0, row=2, columnspan=5, pady=10)
-
-button_exit = tk.Button(linear_frame, text="Exit", command=window.quit)
-button_exit.grid(column=0, row=3, columnspan=5, pady=10)
-
 # Frame for Table Display
 frame_table = tk.Frame(linear_frame)
 frame_table.grid(column=0, row=4, columnspan=3, padx=10, pady=10, sticky="nsew")
 
+label_file_explorer = tLib.HeaderDisplay(linear_frame, tk, browseFiles, window)
+
 # Add tabs to the Notebook widget
-notebook.add(linear_frame, text="Linear Regression")
-notebook.add(logistic_frame, text="Logistic Regression")
+notebook.add(linear_frame, text=notebookFrameNames[0])
+notebook.add(logistic_frame, text=notebookFrameNames[1])
 
 window.mainloop()

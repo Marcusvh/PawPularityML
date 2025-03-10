@@ -23,3 +23,16 @@ def BrowseFilesDisplayErros(linear_frame, tk, mae, mse, rmse, r2):
         rmseScore.config(bg="lightyellow")
         mseScore.config(bg="lightgreen")
         maeScore.config(bg="lightcoral")
+
+def HeaderDisplay(linear_frame, tk, browseFiles, window):
+    # File Explorer label
+    label_file_explorer = tk.Label(linear_frame, text="File Explorer using Tkinter", width=100, height=2, fg="blue")
+    label_file_explorer.grid(column=0, row=1, columnspan=5, pady=10)
+
+    button_explore = tk.Button(linear_frame, text="Browse Files", command=browseFiles)
+    button_explore.grid(column=0, row=2, columnspan=5, pady=10)
+
+    button_exit = tk.Button(linear_frame, text="Exit", command=window.quit)
+    button_exit.grid(column=0, row=3, columnspan=5, pady=10)
+
+    return label_file_explorer
