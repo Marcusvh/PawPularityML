@@ -5,8 +5,6 @@ import os
 from pathlib import Path
 from sklearn.linear_model import LogisticRegression
 
-from sklearn.metrics import accuracy_score
-
 import tkinterLib as tLib
 import regressions as regLib
 
@@ -20,8 +18,7 @@ def browseFiles():
     if filename:  # Proceed only if a file is selected
         df = pd.read_csv(filename)
         label_file_explorer.config(text="File Opened: " + filename)
-        display_table(df)
-
+        
         selected_tab = notebook.index(notebook.select())  # Get index of selected tab
     
         match selected_tab: 
@@ -34,50 +31,59 @@ def browseFiles():
                 mse = mean_squared_error(test_y, pred_y)
                 rmse = mse ** 0.5  # Square root of MSE
                 r2 = r2_score(test_y, pred_y)  # R² score (goodness of fit)
+                
+                display_table(df, notebookFrameNames[0])
+                tLib.displayLinearRegressionErrors(linear_frame, tk, mae, mse, rmse, r2)
 
-                tLib.BrowseFilesDisplayErros(linear_frame, tk, mae, mse, rmse, r2)
             case 1:
+                from sklearn.metrics import accuracy_score
+                test_y, pred_y = regLib.prepAndTrainCSVForLogisticRegression(df)
+                accuracy = accuracy_score(test_y, pred_y)
+
+                display_table(df, notebookFrameNames[1])
+                tLib.displayLogisticRegressionErrors(logistic_frame, tk, accuracy)
                 print("hewwo")
             case _: 
                 print("default/no match")
             
 
 
-def display_table(df):
-    # Clear existing table (if any)
+def display_table(df, tab_name):
+    """Displays a Pandas DataFrame in the correct tab."""
+    if tab_name not in frame_tables:
+        print(f"Error: No frame_table found for {tab_name}")
+        return
+
+    frame_table = frame_tables[tab_name]
+
+    # Clear previous table
     for widget in frame_table.winfo_children():
         widget.destroy()
 
-    # Create Treeview inside frame_table
     tree = ttk.Treeview(frame_table)
-
-    # Define Columns
     tree["columns"] = list(df.columns)
-    tree["show"] = "headings"  # Hide default empty first column
+    tree["show"] = "headings"
 
-    # Configure column headers and make them expand dynamically
+    # Add column headers
     for col in df.columns:
         tree.heading(col, text=col)
-        tree.column(col, anchor="center")  # Center text in columns
+        tree.column(col, anchor="center")
 
-    # Insert rows
+    # Insert data rows
     for _, row in df.iterrows():
         tree.insert("", "end", values=list(row))
 
-    # Pack Treeview with expansion
     tree.pack(expand=True, fill="both")
 
-    # Function to adjust column widths dynamically
+    # Adjust column widths dynamically
     def adjust_column_widths(event):
         total_width = frame_table.winfo_width()
         num_columns = len(df.columns)
-        col_width = max(total_width // num_columns, 100)  # Minimum width = 100px
+        col_width = max(total_width // num_columns, 100)
         for col in df.columns:
             tree.column(col, width=col_width)
 
-    # Bind resizing event to adjust column widths
     frame_table.bind("<Configure>", adjust_column_widths)
-
 
 # Tkinter Window Setup
 window = tk.Tk()
@@ -91,21 +97,29 @@ notebook.pack(padx=10, pady=10, expand=True, fill="both")
 # linear tab
 linear_frame = ttk.Frame(notebook)
 linear_frame.pack(fill="both", expand=True)
-
-# Configure frame_table to expand with window
-linear_frame.columnconfigure(0, weight=1)  # Expand first column
-linear_frame.rowconfigure(4, weight=1)     # Expand row containing frame_table
+linear_frame.columnconfigure(0, weight=1)
+linear_frame.rowconfigure(4, weight=1)
 
 # logistic tab
 logistic_frame = ttk.Frame(notebook)
-linear_frame.pack(fill="both", expand=True)
+logistic_frame.columnconfigure(0, weight=1)
+logistic_frame.rowconfigure(4, weight=1)
+logistic_frame.pack(fill="both", expand=True)
 
-# Frame for Table Display (expands with window)
-frame_table = tk.Frame(linear_frame)
-frame_table.grid(column=0, row=4, columnspan=3, padx=10, pady=10, sticky="nsew")
+frames_with_file_explorer = [linear_frame, logistic_frame]
+# Store frames using names as keys instead of direct frame objects
+frame_tables = {
+    "Linear Regression": tk.Frame(linear_frame),
+    "Logistic Regression": tk.Frame(logistic_frame)
+}
 
+# Loop through the dictionary to place them correctly
+for name, frame_table in frame_tables.items():
+    frame_table.grid(column=0, row=4, columnspan=3, padx=10, pady=10, sticky="nsew")
 
-label_file_explorer = tLib.HeaderDisplay(linear_frame, tk, browseFiles, window)
+for frame in frames_with_file_explorer:
+    label_file_explorer = tLib.headerDisplay(frame, tk, browseFiles, window)
+    
 
 # Add tabs to the Notebook widget
 notebook.add(linear_frame, text=notebookFrameNames[0])
