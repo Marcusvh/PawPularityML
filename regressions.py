@@ -20,10 +20,11 @@ def prepAndTrainCSVForLogisticRegression(df):
 
 
 def prepAndTrainRegression(df):
-    # Prepare X and y
-    X = df.iloc[:,1:-1]
-    y = df.iloc[:,-1]
+    # Filter out rows where 'Human' column is 1
+    df = df[df["Human"] == 0]
 
-    # Do train test split
+    X = df.iloc[:, 1:-1]
+    y = df.iloc[:, -1]
+
     train_x, test_x, train_y, test_y = train_test_split(X, y, test_size=0.2, random_state=42)
     return train_x, test_x, train_y, test_y
