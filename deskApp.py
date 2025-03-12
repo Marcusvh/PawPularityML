@@ -4,7 +4,7 @@ import pandas as pd
 import os
 
 import tkinterLib as tLib
-import regressions as regLib
+import models as regLib
 
 notebookFrameNames = ["Linear Regression", "Logistic Regression"]
 
