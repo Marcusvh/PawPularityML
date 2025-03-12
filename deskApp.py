@@ -2,8 +2,6 @@ import tkinter as tk
 from tkinter import filedialog, ttk
 import pandas as pd
 import os
-from pathlib import Path
-from sklearn.linear_model import LogisticRegression
 
 import tkinterLib as tLib
 import regressions as regLib
@@ -23,25 +21,19 @@ def browseFiles():
     
         match selected_tab: 
             case 0:
-                from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
-                train_x, test_x, train_y, test_y, pred_y = regLib.prepAndTrainCSVForLinearRegression(df)
+                test_y, pred_y = regLib.prepAndTrainCSVForLinearRegression(df)
 
-                # Calculate regression error metrics
-                mae = mean_absolute_error(test_y, pred_y)
-                mse = mean_squared_error(test_y, pred_y)
-                rmse = mse ** 0.5  # Square root of MSE
-                r2 = r2_score(test_y, pred_y)  # R² score (goodness of fit)
-                
+                mae, mse, rmse, r2 = regLib.regressionErrorScores(test_y=test_y, pred_y=pred_y)
+
                 display_table(df, notebookFrameNames[0])
-                tLib.displayLinearRegressionErrors(linear_frame, tk, mae, mse, rmse, r2)
+                tLib.displayRegressionErrors(linear_frame, tk, mae, mse, rmse, r2)
 
             case 1:
-                from sklearn.metrics import accuracy_score
                 test_y, pred_y = regLib.prepAndTrainCSVForLogisticRegression(df)
-                accuracy = accuracy_score(test_y, pred_y)
-
+                mae, mse, rmse, r2 = regLib.regressionErrorScores(test_y=test_y, pred_y=pred_y)
+                tLib.displayRegressionErrors(logistic_frame, tk, mae, mse, rmse, r2)
+                
                 display_table(df, notebookFrameNames[1])
-                tLib.displayLogisticRegressionErrors(logistic_frame, tk, accuracy)
                 print("hewwo")
             case _: 
                 print("default/no match")
