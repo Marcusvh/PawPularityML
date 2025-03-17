@@ -21,7 +21,7 @@ def browseFiles():
     
         match selected_tab: 
             case 0:
-                test_y, pred_y = regLib.prepAndTrainCSVForLinearRegression(df)
+                train_x, test_x, train_y, test_y, pred_y = regLib.prepAndTrainCSVForLinearRegression(df)
 
                 mae, mse, rmse, r2 = regLib.regressionErrorScores(test_y=test_y, pred_y=pred_y)
 
