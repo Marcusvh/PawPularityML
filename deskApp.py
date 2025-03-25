@@ -7,38 +7,42 @@ import tkinterLib as tLib
 import models as regLib
 
 notebookFrameNames = ["Linear Regression", "Logistic Regression"]
+train_csv_path = "./train.csv"
 
 def browseFiles():
     filename = filedialog.askopenfilename(initialdir=f"{os.getcwd}", 
                                           title="Select a file", 
                                           filetypes=(("CSV files", "*.csv"), ("all files", "*.*")))
 
-    if filename:  # Proceed only if a file is selected
-        df = pd.read_csv(filename)
+    if filename:
+        train_df = pd.read_csv(train_csv_path)
+        test_df = pd.read_csv(filename)
         label_file_explorer.config(text="File Opened: " + filename)
         
         selected_tab = notebook.index(notebook.select())  # Get index of selected tab
     
         match selected_tab: 
             case 0:
-                train_x, test_x, train_y, test_y, pred_y = regLib.prepAndTrainCSVForLinearRegression(df)
+                train_x, test_x, train_y, test_y = regLib.prepRegressionData(train_df)
+                pred_y, model = regLib.trainAndPredictLinearRegression(train_x, train_y, test_x)
+                regLib.PredictModelRegression(model, test_df) # prediction for user selected csv file, based on model trained on train.csv
 
                 mae, mse, rmse, r2 = regLib.regressionErrorScores(test_y=test_y, pred_y=pred_y)
 
-                display_table(df, notebookFrameNames[0])
+                display_table(test_df, notebookFrameNames[0])
                 tLib.displayRegressionErrors(linear_frame, tk, mae, mse, rmse, r2)
 
             case 1:
-                test_y, pred_y = regLib.prepAndTrainCSVForLogisticRegression(df)
+                train_x, test_x, train_y, test_y = regLib.prepRegressionData(train_df)
+                pred_y, model = regLib.trainAndPredictLogisticRegression(train_x, train_y, test_x)
+                regLib.PredictModelRegression(model, test_df) # prediction for user selected csv file, based on model trained on train.csv
+
                 mae, mse, rmse, r2 = regLib.regressionErrorScores(test_y=test_y, pred_y=pred_y)
                 tLib.displayRegressionErrors(logistic_frame, tk, mae, mse, rmse, r2)
                 
-                display_table(df, notebookFrameNames[1])
-                print("hewwo")
+                display_table(test_df, notebookFrameNames[1])
             case _: 
                 print("default/no match")
-            
-
 
 def display_table(df, tab_name):
     """Displays a Pandas DataFrame in the correct tab."""
