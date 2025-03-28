@@ -1,6 +1,6 @@
 from sklearn.linear_model import LinearRegression, LogisticRegression
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+from sklearn.model_selection import train_test_split, cross_val_score
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score, roc_curve, auc
 
 def prepRegressionData(df, test_size=0.2, random_state=42):
     # Filter out rows where 'Human' column is 1
@@ -32,13 +32,18 @@ def regressionErrorScores(test_y, pred_y):
     r2 = r2_score(test_y, pred_y)  # R² score (goodness of fit)
     return mae, mse, rmse, r2
 
-def classificationErrorScores(test_y, pred_y):
-    # Calculate classification error metrics
-    # accuracy = accuracy_score(test_y, pred_y)
-    return 0
-
-def PredictModelRegression(model, df):
+def predictModelRegression(model, df):
     X = df.iloc[:, 1:] # filter out 'Id' column
 
     pred_y = model.predict(X)
     return pred_y
+
+def crossValidationScores(model, X, y, cv=5):
+    cv_scores = cross_val_score(model, X, y, cv=cv)
+    return cv_scores
+
+def calculateROCCurve(model, test_x, test_y):
+    pred_prob = model.predict_proba(test_x)[:, 1]
+    fpr, tpr, _ = roc_curve(test_y, pred_prob)
+    roc_auc = auc(fpr, tpr)
+    return fpr, tpr, roc_auc

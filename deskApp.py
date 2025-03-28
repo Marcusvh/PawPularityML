@@ -2,9 +2,9 @@ import tkinter as tk
 from tkinter import filedialog, ttk
 import pandas as pd
 import os
-
 import tkinterLib as tLib
 import models as regLib
+import tkinterWindowSetup as tWin
 
 notebookFrameNames = ["Linear Regression", "Logistic Regression"]
 train_csv_path = "./train.csv"
@@ -25,22 +25,32 @@ def browseFiles():
             case 0:
                 train_x, test_x, train_y, test_y = regLib.prepRegressionData(train_df)
                 pred_y, model = regLib.trainAndPredictLinearRegression(train_x, train_y, test_x)
-                regLib.PredictModelRegression(model, test_df) # prediction for user selected csv file, based on model trained on train.csv
+                regLib.predictModelRegression(model, test_df) # prediction for user selected csv file, based on model trained on train.csv
 
                 mae, mse, rmse, r2 = regLib.regressionErrorScores(test_y=test_y, pred_y=pred_y)
 
                 display_table(test_df, notebookFrameNames[0])
                 tLib.displayRegressionErrors(linear_frame, tk, mae, mse, rmse, r2)
 
+                cv_scores = regLib.crossValidationScores(model, train_x, train_y)
+                tLib.displayCrossValidationScores(linear_frame, tk, cv_scores)
+
             case 1:
                 train_x, test_x, train_y, test_y = regLib.prepRegressionData(train_df)
                 pred_y, model = regLib.trainAndPredictLogisticRegression(train_x, train_y, test_x)
-                regLib.PredictModelRegression(model, test_df) # prediction for user selected csv file, based on model trained on train.csv
+                regLib.predictModelRegression(model, test_df) # prediction for user selected csv file, based on model trained on train.csv
 
                 mae, mse, rmse, r2 = regLib.regressionErrorScores(test_y=test_y, pred_y=pred_y)
                 tLib.displayRegressionErrors(logistic_frame, tk, mae, mse, rmse, r2)
                 
                 display_table(test_df, notebookFrameNames[1])
+
+                cv_scores = regLib.crossValidationScores(model, train_x, train_y)
+                tLib.displayCrossValidationScores(logistic_frame, tk, cv_scores)
+
+                fpr, tpr, roc_auc = regLib.calculateROCCurve(model, test_x, test_y)
+                tLib.displayROCCurve(logistic_frame, tk, fpr, tpr, roc_auc)
+                
             case _: 
                 print("default/no match")
 
@@ -81,44 +91,12 @@ def display_table(df, tab_name):
 
     frame_table.bind("<Configure>", adjust_column_widths)
 
-# Tkinter Window Setup
-window = tk.Tk()
-window.title("Paw Pularity")
-window.geometry("800x500")
+window = tWin.setup_window()
+notebook = tWin.setup_notebook(window, ttk)
 
-# to make tabs (is a widget)
-notebook = ttk.Notebook(window)
-notebook.pack(padx=10, pady=10, expand=True, fill="both")
+linear_container, linear_frame, logistic_container, logistic_frame = tWin.setup_tabs(notebook, ttk)
+frame_tables, label_file_explorer = tWin.setup_frames(linear_frame, logistic_frame, tLib, browseFiles, window)    
+tWin.add_tabs_to_notebook(notebook, linear_container, logistic_container, notebookFrameNames)
 
-# linear tab
-linear_frame = ttk.Frame(notebook)
-linear_frame.pack(fill="both", expand=True)
-linear_frame.columnconfigure(0, weight=1)
-linear_frame.rowconfigure(4, weight=1)
-
-# logistic tab
-logistic_frame = ttk.Frame(notebook)
-logistic_frame.columnconfigure(0, weight=1)
-logistic_frame.rowconfigure(4, weight=1)
-logistic_frame.pack(fill="both", expand=True)
-
-frames_with_file_explorer = [linear_frame, logistic_frame]
-# Store frames using names as keys instead of direct frame objects
-frame_tables = {
-    "Linear Regression": tk.Frame(linear_frame),
-    "Logistic Regression": tk.Frame(logistic_frame)
-}
-
-# Loop through the dictionary to place them correctly
-for name, frame_table in frame_tables.items():
-    frame_table.grid(column=0, row=4, columnspan=3, padx=10, pady=10, sticky="nsew")
-
-for frame in frames_with_file_explorer:
-    label_file_explorer = tLib.headerDisplay(frame, tk, browseFiles, window)
-    
-
-# Add tabs to the Notebook widget
-notebook.add(linear_frame, text=notebookFrameNames[0])
-notebook.add(logistic_frame, text=notebookFrameNames[1])
 
 window.mainloop()
