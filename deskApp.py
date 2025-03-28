@@ -23,17 +23,20 @@ def browseFiles():
     
         match selected_tab: 
             case 0:
-                train_x, test_x, train_y, test_y = regLib.prepRegressionData(train_df)
-                pred_y, model = regLib.trainAndPredictLinearRegression(train_x, train_y, test_x)
-                regLib.predictModelRegression(model, test_df) # prediction for user selected csv file, based on model trained on train.csv
+                # train_x, test_x, train_y, test_y = regLib.prepRegressionData(train_df)
+                # pred_y, model = regLib.trainAndPredictLinearRegression(train_x, train_y, test_x)
+                # regLib.predictModelRegression(model, test_df) # prediction for user selected csv file, based on model trained on train.csv
 
-                mae, mse, rmse, r2 = regLib.regressionErrorScores(test_y=test_y, pred_y=pred_y)
+                # mae, mse, rmse, r2 = regLib.regressionErrorScores(test_y=test_y, pred_y=pred_y)
 
-                display_table(test_df, notebookFrameNames[0])
-                tLib.displayRegressionErrors(linear_frame, tk, mae, mse, rmse, r2)
+                # display_table(test_df, notebookFrameNames[0])
+                # tLib.displayRegressionErrors(linear_frame, tk, mae, mse, rmse, r2)
 
-                cv_scores = regLib.crossValidationScores(model, train_x, train_y)
-                tLib.displayCrossValidationScores(linear_frame, tk, cv_scores)
+                # cv_scores = regLib.crossValidationScores(model, train_x, train_y)
+                # tLib.displayCrossValidationScores(linear_frame, tk, cv_scores)
+
+                train_x, test_x, train_y, test_y = regLib.prepGaussianNBData(train_df, features=["Eyes", "Face", "Occlusion"], target="Pawpularity")
+                regLib.trainGaussianNBWithSelectedFeatures(train_x, train_y, test_x)
 
             case 1:
                 train_x, test_x, train_y, test_y = regLib.prepRegressionData(train_df)
