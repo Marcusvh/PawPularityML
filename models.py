@@ -1,29 +1,42 @@
 from sklearn.linear_model import LinearRegression, LogisticRegression
 from sklearn.model_selection import train_test_split, cross_val_score
-from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score, roc_curve, auc
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score, roc_curve, auc, accuracy_score
 from sklearn.naive_bayes import GaussianNB
+from sklearn.preprocessing import StandardScaler
+import pandas as pd
 
 def prepRegressionData(df, test_size=0.2, random_state=42):
-    # Filter out rows where 'Human' column is 1
-    df = df[df["Human"] == 0]
-    
-    X = df.iloc[:, 1:-1]
-    y = df.iloc[:, -1]
+    # Use all features except the target for X, and the target for y
+    X = df.iloc[:, :-1]  # filter out 'Id' column
+    y = df["target"]
     
     train_x, test_x, train_y, test_y = train_test_split(X, y, test_size=test_size, random_state=random_state)
     return train_x, test_x, train_y, test_y
 
-def trainAndPredictLinearRegression(train_x, train_y, test_x):
+def PredictLinearRegression(train_x, train_y, test_x):
     reg = LinearRegression()
     reg.fit(train_x, train_y)
     pred_y = reg.predict(test_x)
     return pred_y, reg
 
-def trainAndPredictLogisticRegression(train_x, train_y, test_x):
-    model = LogisticRegression()
-    model.fit(train_x, train_y)
-    pred_y = model.predict(test_x)
-    return pred_y, model
+def PredictLogisticRegression(df):
+    """Train a LogisticRegression model using all rows of the dataset."""
+    X = df.drop(columns=["target"])  # Features
+    y = df["target"]  # Target
+
+    # Scale the features
+    scaler = StandardScaler()
+    X_scaled = scaler.fit_transform(X)
+
+    X_scaled = pd.DataFrame(X_scaled, columns=X.columns)
+
+    # Train the model
+    model = LogisticRegression(max_iter=5000, solver='saga')  # Increased iterations and changed solver
+    model.fit(X_scaled, y)
+
+    pred_y = model.predict(X_scaled)
+    accuracy = accuracy_score(y, pred_y)
+    return model, pred_y, accuracy
 
 def regressionErrorScores(test_y, pred_y):
     # Calculate regression error metrics
@@ -86,4 +99,18 @@ def gaussianNBexploreParameters(model):
     # The variance indicates how much the feature varies for each class.
     print("Variance of each feature for each class: (model.var_)")
     print(model.var_) # sigma_ i bogen
-    
+
+def trainLogisticRegressionFullDataset(df):
+    """Train a LogisticRegression model using all rows of the dataset."""
+    X = df.drop(columns=["target"])  # Features
+    y = df["target"]  # Target (benign or malignant)
+
+    model = LogisticRegression(max_iter=1000)
+    model.fit(X, y)
+
+    # Predict on the same dataset (for demonstration purposes)
+    pred_y = model.predict(X)
+
+    # Calculate accuracy
+    accuracy = (pred_y == y).mean()
+    return model, accuracy

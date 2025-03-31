@@ -41,14 +41,15 @@ def headerDisplay(frame, tk, browseFiles, window):
 
 def displayCrossValidationScores(frame, tk, cv_scores):
     title_label = tk.Label(frame, text="Cross-Validation Scores", font=("Arial", 14, "bold"))
-    title_label.grid(column=0, row=11, columnspan=5, pady=10)
+    title_label.grid(column=0, columnspan=5, pady=10)
 
     for idx, score in enumerate(cv_scores):
         score_label = tk.Label(frame, text=f"Fold {idx + 1}: {score:.5f}", font=("Arial", 10, "bold"), anchor="w", padx=10)
-        score_label.grid(column=0, row=12 + idx, sticky="w", pady=5)
+        score_label.grid(column=0, sticky="w", pady=5)
 
 def displayROCCurve(frame, fpr, tpr, roc_auc):
-    fig, ax = plt.subplots()
+    # Set a fixed size for the figure
+    fig, ax = plt.subplots(figsize=(6, 4))  # Adjust figure size as needed
     ax.plot(fpr, tpr, color='blue', lw=2, label=f'ROC curve (area = {roc_auc:.2f})')
     ax.plot([0, 1], [0, 1], color='gray', lw=2, linestyle='--')
     ax.set_xlim([0.0, 1.0])
@@ -58,6 +59,16 @@ def displayROCCurve(frame, fpr, tpr, roc_auc):
     ax.set_title('Receiver Operating Characteristic (ROC)')
     ax.legend(loc="lower right")
 
+    # Embed the plot into the frame
     canvas = FigureCanvasTkAgg(fig, master=frame)
     canvas.draw()
-    canvas.get_tk_widget().grid(column=0, row=20, columnspan=5, pady=10)
+    canvas.get_tk_widget().grid(column=0, columnspan=5, pady=10)  # Use grid for better control over placement
+    # canvas.get_tk_widget().pack(fill="both", expand=True, pady=10)  # Ensure it expands to fill the frame
+    
+
+def displayAccuracyScore(frame, tk, accuracy):
+    accuracy_label = tk.Label(frame, text=f"Accuracy: {accuracy:.2f}", font=("Arial", 10, "bold"), anchor="w", padx=10)
+    accuracy_label.grid(column=0, sticky="w", pady=5)
+
+    accuracy_label.config(bg="yellow")
+    # acc_text.grid(column=0, row=5, columnspan=5, pady=10)

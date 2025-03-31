@@ -12,17 +12,29 @@ def setup_notebook(window, ttk):
     return notebook
 
 def setup_tabs(notebook, ttk):
+    """Creates fully scrollable tabs using the smart frame approach."""
     linear_container, linear_frame = create_scrollable_frame(notebook, ttk)
-    linear_frame.pack(fill="both", expand=True)
-    linear_frame.columnconfigure(0, weight=1)
-    linear_frame.rowconfigure(4, weight=1)
-
     logistic_container, logistic_frame = create_scrollable_frame(notebook, ttk)
-    logistic_frame.columnconfigure(0, weight=1)
-    logistic_frame.rowconfigure(4, weight=1)
-    logistic_frame.pack(fill="both", expand=True)
+
+    notebook.add(linear_container, text="Linear Regression")
+    notebook.add(logistic_container, text="Logistic Regression")
 
     return linear_container, linear_frame, logistic_container, logistic_frame
+
+
+
+# def setup_tabs(notebook, ttk):
+#     linear_container, linear_frame = create_scrollable_frame(notebook, ttk)
+#     linear_frame.pack(fill="both", expand=True)
+#     linear_frame.columnconfigure(0, weight=1)
+#     linear_frame.rowconfigure(4, weight=1)
+
+#     logistic_container, logistic_frame = create_scrollable_frame(notebook, ttk)
+#     logistic_frame.columnconfigure(0, weight=1)
+#     logistic_frame.rowconfigure(4, weight=1)
+#     logistic_frame.pack(fill="both", expand=True)
+
+#     return linear_container, linear_frame, logistic_container, logistic_frame
 
 def setup_frames(linear_frame, logistic_frame, tLib, browseFiles, window):
     frames_with_file_explorer = [linear_frame, logistic_frame]
@@ -45,26 +57,30 @@ def add_tabs_to_notebook(notebook, linear_container, logistic_container, noteboo
 
 
 def create_scrollable_frame(parent, ttk):
+    """Creates a smart scrollable frame that allows natural scrolling for all elements inside."""
     container = ttk.Frame(parent)
-    canvas = tk.Canvas(container)
+    canvas = tk.Canvas(container, highlightthickness=0)
     scrollbar_y = ttk.Scrollbar(container, orient="vertical", command=canvas.yview)
-    scrollbar_x = ttk.Scrollbar(container, orient="horizontal", command=canvas.xview)
 
-    # Frame that will contain your content
+    # Create an inner frame for all content
     scroll_frame = ttk.Frame(canvas)
 
-    # Update scroll region when content changes
+    # Update scroll region when frame changes size
     scroll_frame.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
 
+    # Embed the frame inside the canvas
     canvas.create_window((0, 0), window=scroll_frame, anchor="nw")
-    canvas.configure(yscrollcommand=scrollbar_y.set, xscrollcommand=scrollbar_x.set)
+    canvas.configure(yscrollcommand=scrollbar_y.set)
 
-    # Layout management
-    canvas.grid(row=0, column=0, sticky="nsew")
-    scrollbar_y.grid(row=0, column=1, sticky="ns")
-    scrollbar_x.grid(row=1, column=0, sticky="ew")
+    # Layout packing
+    canvas.pack(side="left", fill="both", expand=True)
+    scrollbar_y.pack(side="right", fill="y")
 
-    container.grid_rowconfigure(0, weight=1)
-    container.grid_columnconfigure(0, weight=1)
+    # Enable mouse scroll for everything inside the frame
+    def _on_mouse_wheel(event):
+        canvas.yview_scroll(-1 * (event.delta // 120), "units")
+
+    scroll_frame.bind("<Enter>", lambda e: container.bind_all("<MouseWheel>", _on_mouse_wheel))
+    scroll_frame.bind("<Leave>", lambda e: container.unbind_all("<MouseWheel>"))
 
     return container, scroll_frame
