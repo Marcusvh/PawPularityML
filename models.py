@@ -1,6 +1,6 @@
 from sklearn.linear_model import LinearRegression, LogisticRegression
 from sklearn.model_selection import train_test_split, cross_val_score
-from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score, roc_curve, auc, accuracy_score
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score, roc_curve, auc, accuracy_score, classification_report
 from sklearn.naive_bayes import GaussianNB
 from sklearn.preprocessing import StandardScaler
 import pandas as pd
@@ -19,24 +19,39 @@ def PredictLinearRegression(train_x, train_y, test_x):
     pred_y = reg.predict(test_x)
     return pred_y, reg
 
-def PredictLogisticRegression(df):
-    """Train a LogisticRegression model using all rows of the dataset."""
-    X = df.drop(columns=["target"])  # Features
-    y = df["target"]  # Target
+def PredictLogisticRegression(dataset):
+    """Train a LogisticRegression model to classify tumors as benign or malignant."""
 
-    # Scale the features
+    # Convert to DataFrame
+    df = pd.DataFrame(dataset.data, columns=dataset.feature_names)
+    df["target"] = dataset.target
+
+    # Separate features and target
+    X = df.drop(columns=["target"])
+    y = df["target"]  # 0 = Benign, 1 = Malignant
+
+    # Train/test split
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=42, stratify=y
+    )
+
+    # Feature scaling
     scaler = StandardScaler()
-    X_scaled = scaler.fit_transform(X)
-
-    X_scaled = pd.DataFrame(X_scaled, columns=X.columns)
+    X_train_scaled = scaler.fit_transform(X_train)
+    X_test_scaled = scaler.transform(X_test)
 
     # Train the model
-    model = LogisticRegression(max_iter=5000, solver='saga')  # Increased iterations and changed solver
-    model.fit(X_scaled, y)
+    model = LogisticRegression(max_iter=5000, solver="saga")
+    model.fit(X_train_scaled, y_train)
 
-    pred_y = model.predict(X_scaled)
-    accuracy = accuracy_score(y, pred_y)
-    return model, pred_y, accuracy
+    # Predict on test set
+    pred_y = model.predict(X_test_scaled)
+
+    # Evaluate performance
+    accuracy = accuracy_score(y_test, pred_y)
+    report = classification_report(y_test, pred_y, target_names=["Benign", "Malignant"])
+
+    return model, scaler, pred_y, accuracy, report
 
 def regressionErrorScores(test_y, pred_y):
     # Calculate regression error metrics
@@ -99,18 +114,3 @@ def gaussianNBexploreParameters(model):
     # The variance indicates how much the feature varies for each class.
     print("Variance of each feature for each class: (model.var_)")
     print(model.var_) # sigma_ i bogen
-
-def trainLogisticRegressionFullDataset(df):
-    """Train a LogisticRegression model using all rows of the dataset."""
-    X = df.drop(columns=["target"])  # Features
-    y = df["target"]  # Target (benign or malignant)
-
-    model = LogisticRegression(max_iter=1000)
-    model.fit(X, y)
-
-    # Predict on the same dataset (for demonstration purposes)
-    pred_y = model.predict(X)
-
-    # Calculate accuracy
-    accuracy = (pred_y == y).mean()
-    return model, accuracy

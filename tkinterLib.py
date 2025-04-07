@@ -72,3 +72,28 @@ def displayAccuracyScore(frame, tk, accuracy):
 
     accuracy_label.config(bg="yellow")
     # acc_text.grid(column=0, row=5, columnspan=5, pady=10)
+
+def display_results(accuracy, report, tk, ttk):
+    """Display accuracy and classification report in a Tkinter window."""
+
+    result_window = tk.Toplevel()
+    result_window.title("Logistic Regression Results")
+
+    # Accuracy Label
+    accuracy_label = tk.Label(result_window, text=f"Model Accuracy: {accuracy:.4f}", font=("Arial", 14, "bold"))
+    accuracy_label.pack(pady=10)
+
+    # Classification Report
+    report_label = tk.Label(result_window, text="Classification Report:", font=("Arial", 12, "bold"))
+    report_label.pack()
+
+    # Text widget for displaying the report
+    text_widget = tk.Text(result_window, width=60, height=10, wrap="word", font=("Courier", 10))
+    text_widget.insert("1.0", report)
+    text_widget.config(state="disabled")  # Make it read-only
+    text_widget.pack(padx=10, pady=5, fill="both", expand=True)
+
+    # Scrollbar for text widget
+    scrollbar = ttk.Scrollbar(result_window, command=text_widget.yview)
+    text_widget.config(yscrollcommand=scrollbar.set)
+    scrollbar.pack(side="right", fill="y")

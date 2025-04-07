@@ -10,8 +10,8 @@ train_csv_path = "./train.csv"
 
 def browseFiles():
     # Load the breast cancer dataset
-    data = load_breast_cancer(as_frame=True)
-    df = data.frame
+    data = load_breast_cancer()
+    df = data
     label_file_explorer.config(text="Breast Cancer Dataset Loaded")
     
     selected_tab = notebook.index(notebook.select())  # Get index of selected tab
@@ -30,17 +30,18 @@ def browseFiles():
             tLib.displayCrossValidationScores(linear_frame, tk, cv_scores)
 
         case 1:
-            model, pred_y, accuracy = regLib.PredictLogisticRegression(df)  # Adjusted unpacking
+            model, scaler, pred_y, accuracy, report = regLib.PredictLogisticRegression(df)
+            tLib.display_results(accuracy, report, tk, ttk)
 
-            mae, mse, rmse, r2 = regLib.regressionErrorScores(test_y=df["target"], pred_y=pred_y)
-            tLib.displayRegressionErrors(logistic_frame, tk, mae, mse, rmse, r2)
-            tLib.displayAccuracyScore(logistic_frame, tk, accuracy)
+            # Display accuracy and predictions
+            # tLib.displayAccuracyScore(logistic_frame, tk, accuracy)
+            # display_table(df.assign(Predicted=pred_y), notebookFrameNames[1])
 
-            display_table(df.assign(Predicted=pred_y), notebookFrameNames[1])
-
+            # Cross-validation scores
             cv_scores = regLib.crossValidationScores(model, df.drop(columns=["target"]), df["target"])
             tLib.displayCrossValidationScores(logistic_frame, tk, cv_scores)
 
+            # ROC Curve
             fpr, tpr, roc_auc = regLib.calculateROCCurve(model, df.drop(columns=["target"]), df["target"])
             tLib.displayROCCurve(logistic_frame, fpr, tpr, roc_auc)
 
