@@ -31,8 +31,8 @@ class MLApp(tk.Tk):
         ttk.Button(self, text="Decision Tree Classifier", command=self.run_decision_tree).pack(pady=5)
         ttk.Button(self, text="Visualize Decision Tree", command=self.visualize_decision_tree).pack(pady=5)
         ttk.Button(self, text="Show Confusion Matrix", command=self.show_conf_matrix).pack(pady=5)
-        ttk.Button(self, text="Show Precision / Recall / F1", command=self.show_metrics).pack(pady=5)
         ttk.Button(self, text="Compare Models (LogisticsRegression and Decision tree)", command=self.compare_logistic_regression_decision_tree).pack(pady=5)
+        ttk.Button(self, text="Show discussion", command=self.discussion).pack(pady=5)
 
     def show_data(self):
         top = tk.Toplevel(self)
@@ -76,7 +76,7 @@ class MLApp(tk.Tk):
         # Split data
         X_train, X_test, y_train, y_test = train_test_split(data.data, data.target, test_size=0.3, random_state=42)
 
-        model = LogisticRegression(max_iter=1000)
+        model = LogisticRegression(max_iter=1000, solver="saga")
         model.fit(X_train, y_train)
         y_pred = model.predict(X_test)
 
@@ -120,8 +120,18 @@ class MLApp(tk.Tk):
 
     def show_conf_matrix(self):
         if hasattr(self, 'conf_matrix'):
-            # Plot confusion matrix using seaborn heatmap
-            sns.heatmap(self.conf_matrix, annot=True, fmt='d', cmap='Blues')
+            import numpy as np
+
+            labels = np.array([["True negative (TN)", "False positive (FP)"], ["False negative (FN)", "True positive (TP)"]])
+            values = self.conf_matrix
+            annot = np.empty_like(values, dtype=object)
+
+            for i in range(values.shape[0]):
+                for j in range(values.shape[1]):
+                    annot[i, j] = f"{labels[i, j]}\n{values[i, j]}"
+
+            sns.heatmap(values, annot=annot, fmt='', cmap='Blues', cbar=False,
+                        xticklabels=["0", "1"], yticklabels=["0", "1"])
             plt.title("Confusion Matrix (Logistic Regression)")
             plt.xlabel("Predicted")
             plt.ylabel("Actual")
@@ -171,13 +181,27 @@ class MLApp(tk.Tk):
         
         messagebox.showinfo("Model Comparison", result_text)
     
-    def calc_performence_scores(y_test, y_pred):
+    def calc_performence_scores(self, y_test, y_pred):
         acc = accuracy_score(y_test, y_pred)
         p = precision_score(y_test, y_pred)
         r = recall_score(y_test, y_pred)
         f1 = f1_score(y_test, y_pred)
         return acc, p, r, f1
     
+    def discussion(self):
+        # Discussion about the models
+        discussion_text = (
+            "Precision vs Recall\n"
+            "Precision er forholdet mellem sande positive forudsigelser og det samlede antal forudsagte positive.\n"
+            "Formel for Precision: Precision = TP / (TP + FP)\n\n"
+            "Recall er forholdet mellem sande positive forudsigelser og det samlede antal faktiske positive.\n"
+            "Formel for Recall: Recall = TP / (TP + FN)\n\n"
+            "Hvornår man bør prioritere Precision frem for Recall:\n"
+            "Hvis omkostningen ved en falsk positiv er høj, bør man prioritere Precision. For eksempel i spamfiltrering: at markere en legitim e-mail som spam (falsk positiv) kan være til stor gene for brugeren.\n\n"
+            "Hvornår man bør prioritere Recall frem for Precision:\n"
+            "Hvis omkostningen ved en falsk negativ er høj, bør man prioritere Recall. For eksempel i medicinske diagnoser: at undlade at opdage en sygdom (falsk negativ) kan have alvorlige konsekvenser for patienten."
+        )
+        messagebox.showinfo("Discussion", discussion_text)
 # Run the app
 if __name__ == "__main__":
     app = MLApp()
