@@ -18,9 +18,16 @@ from sklearn.metrics import (
 )
 
 # Global data
+data_row_limit = 100
 data = load_breast_cancer()
-df = pd.DataFrame(data.data, columns=data.feature_names)
-df['target'] = data.target
+data_subset = data.data[:data_row_limit, :]
+data.data = data.data[:data_row_limit, :]
+data.target = data.target[:data_row_limit]
+target_subset = data.target[:data_row_limit]
+
+# Create the DataFrame
+df = pd.DataFrame(data_subset, columns=data.feature_names)
+df['target'] = target_subset
 
 # App GUI
 class MLApp(tk.Tk):
@@ -83,13 +90,14 @@ class MLApp(tk.Tk):
         pred = model.predict(X[:15])
         formated_pred = [f"{pred[i]:.2f}\n" for i in range(len(pred))]
         
-        messagebox.showinfo("Linear Regression", f"predict mean radius (row 1-15):\n{formated_pred}")
+        messagebox.showinfo("Linear Regression", f"predict mean radius (row 1-15):{formated_pred}")
 
     def run_logistic_regression(self):
         # Split data
+        print(data.data)
         X_train, X_test, y_train, y_test = train_test_split(data.data, data.target, test_size=0.3, random_state=42)
 
-        model = LogisticRegression(max_iter=1000, solver="saga")
+        model = LogisticRegression(max_iter=1000)
         model.fit(X_train, y_train)
         y_pred = model.predict(X_test)
 
@@ -246,18 +254,45 @@ class MLApp(tk.Tk):
         X_train, X_test, y_train, y_test = train_test_split(data.data, data.target, test_size=0.3, random_state=42)
 
         # Logistic model without regularization
-        model_none = LogisticRegression(max_iter=1000, penalty=None)
+        model_none = LogisticRegression(max_iter=1000, penalty=None, solver="lbfgs")
         model_none.fit(X_train, y_train)
+        y_pred_none = model_none.predict(X_test)
 
         # Logistic model with L1 regularization
-        model_l1 = LogisticRegression(max_iter=1000, penalty='l1', solver='saga')
+        model_l1 = LogisticRegression(max_iter=1000, penalty='l1', solver="liblinear")
         model_l1.fit(X_train, y_train)
+        y_pred_l1 = model_l1.predict(X_test)
 
         # Logistic model with L2 regularization
-        model_l2 = LogisticRegression(max_iter=1000, penalty='l2')
+        model_l2 = LogisticRegression(max_iter=1000, penalty='l2', solver="lbfgs")
         model_l2.fit(X_train, y_train)
+        y_pred_l2 = model_l2.predict(X_test)
 
-        messagebox.showinfo("Regularization Comparison", "Logistic models with different regularizations trained.")
+        acc_none, p_none, r_none, f1_none = self.calc_performence_scores(y_test, y_pred_none)
+        acc_11, p_11, r_11, f1_11 = self.calc_performence_scores(y_test, y_pred_l1) 
+        acc_12, p_12, r_12, f1_12 = self.calc_performence_scores(y_test, y_pred_l2)
+
+        # Show results in a messagebox
+        result_text = (
+            f"Logistic Regression Penalties:\n"
+            f"Penalties: None:\n"
+            f"Accuracy: {acc_none:.2f}\n"
+            f"Precision: {p_none:.2f}\n"
+            f"Recall: {r_none:.2f}\n"
+            f"F1-score: {f1_none:.2f}\n\n"
+            f"Penalties: 11:\n"
+            f"Accuracy: {acc_11:.2f}\n"
+            f"Precision: {p_11:.2f}\n"
+            f"Recall: {r_11:.2f}\n"
+            f"F1-score: {f1_11:.2f}\n\n"
+            f"Penalties: 12:\n"
+            f"Accuracy: {acc_12:.2f}\n"
+            f"Precision: {p_12:.2f}\n"
+            f"Recall: {r_12:.2f}\n"
+            f"F1-score: {f1_12:.2f}"
+        )
+
+        messagebox.showinfo("Logistic penalty", result_text)
 
     def compare_gaussian_nb_logistic(self):
         X_train, X_test, y_train, y_test = train_test_split(data.data, data.target, test_size=0.3, random_state=42)
