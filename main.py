@@ -4,13 +4,14 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 import numpy as np
+import discussions as discussion
 from sklearn.ensemble import RandomForestClassifier, BaggingClassifier
 from sklearn.svm import SVC
 from sklearn.naive_bayes import GaussianNB
 from sklearn.datasets import load_breast_cancer
 from sklearn.linear_model import LogisticRegression, LinearRegression
 from sklearn.tree import DecisionTreeClassifier, plot_tree
-from sklearn.model_selection import train_test_split, cross_val_score
+from sklearn.model_selection import train_test_split, cross_val_score, learning_curve
 from sklearn.metrics import (
     accuracy_score, confusion_matrix,
     precision_score, recall_score, f1_score,
@@ -34,25 +35,54 @@ class MLApp(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("ML GUI – Breast Cancer Analysis")
-        self.geometry("500x400")
+        self.geometry("1000x400")
 
-        ttk.Button(self, text="Show Dataset", command=self.show_data).pack(pady=5)
-        ttk.Button(self, text="Run Linear Regression", command=self.run_linear_regression).pack(pady=5)
-        ttk.Button(self, text="Logistic Regression", command=self.run_logistic_regression).pack(pady=5)
-        ttk.Button(self, text="Decision Tree Classifier", command=self.run_decision_tree).pack(pady=5)
-        ttk.Button(self, text="Visualize Decision Tree", command=self.visualize_decision_tree).pack(pady=5)
-        ttk.Button(self, text="Show Confusion Matrix", command=self.show_conf_matrix).pack(pady=5)
-        ttk.Button(self, text="Compare Models (LogisticsRegression and Decision tree)", command=self.compare_logistic_regression_decision_tree).pack(pady=5)
-        ttk.Button(self, text="Cross-validation", command=self.run_cross_val_score).pack(pady=5)
-        ttk.Button(self, text="Plot ROC Curve", command=self.plot_roc_curve).pack(pady=5)
-        ttk.Button(self, text="Train Logistic with Regularization", command=self.train_logistic_with_regularization).pack(pady=5)
-        ttk.Button(self, text="GaussianNB vs Logistic", command=self.compare_gaussian_nb_logistic).pack(pady=5)
-        ttk.Button(self, text="SVC vs Logistic", command=self.compare_svc_logistic).pack(pady=5)
-        ttk.Button(self, text="Decision Boundary Plot (2 features)", command=self.plot_decision_boundary).pack(pady=5)
-        ttk.Button(self, text="RandomForest vs DecisionTree", command=self.compare_random_forest_decision_tree).pack(pady=5)
-        ttk.Button(self, text="BaggingClassifier", command=self.run_bagging_classifier).pack(pady=5)
-        ttk.Button(self, text="Show discussion: precision vs recall", command=self.discussion_precision_vs_recall).pack(pady=5)
+        # Task label
+        model_label = ttk.Label(self, text="Model Analysis", font=("Arial", 12, "bold"))
+        model_label.grid(row=0, column=0, columnspan=5, pady=10)
 
+        # Task buttons
+        model_buttons = [
+            ("Show Dataset", self.show_data),
+            ("Run Linear Regression", self.run_linear_regression),
+            ("Logistic Regression", self.run_logistic_regression),
+            ("Decision Tree Classifier", self.run_decision_tree),
+            ("Visualize Decision Tree", self.visualize_decision_tree),
+            ("Show Confusion Matrix", self.show_conf_matrix),
+            ("Compare Models", self.compare_logistic_regression_decision_tree),
+            ("Cross-validation", self.run_cross_val_score),
+            ("Plot ROC Curve", self.plot_roc_curve),
+            ("Train Logistic with Regularization", self.train_logistic_with_regularization),
+            ("GaussianNB vs Logistic", self.compare_gaussian_nb_logistic),
+            ("SVC vs Logistic", self.compare_svc_logistic),
+            ("Decision Boundary Plot", self.plot_decision_boundary),
+            ("RandomForest vs DecisionTree", self.compare_random_forest_decision_tree),
+            ("BaggingClassifier", self.run_bagging_classifier),
+            ("Learning curve (decision tree)", self.learning_curve_decision_tree),
+            ("Learning curve (random forest)", self.learning_curve_random_forest),
+            ("Precision vs Recall Discussion", discussion.discussion_precision_vs_recall),
+            ("Bias vs Variance decision tree Discussion", discussion.discussion_bias_variance_trees),
+        ]
+        for idx, (text, command) in enumerate(model_buttons):
+            row = idx // 5 + 1
+            column = idx % 5
+            ttk.Button(self, text=text, command=command).grid(row=row, column=column, pady=5, padx=5, sticky="ew")
+
+        # Discussion label
+        discussion_label = ttk.Label(self, text="Discussions", font=("Arial", 12, "bold"))
+        discussion_label.grid(row=len(model_buttons) // 5 + 2, column=0, columnspan=5, pady=10)
+
+        # Discussion buttons
+        discussion_buttons = [
+            ("Discussion Precision vs Recall", discussion.discussion_precision_vs_recall),
+            ("Discussion Bias vs Variance", discussion.discussion_bias_variance_trees),
+        ]
+        for idx, (text, command) in enumerate(discussion_buttons):
+            row = (len(model_buttons) // 5 + 3) + idx // 5
+            column = idx % 5
+            ttk.Button(self, text=text, command=command).grid(row=row, column=column, pady=5, padx=5, sticky="ew")
+
+        
 
     def show_data(self):
         top = tk.Toplevel(self)
@@ -208,22 +238,6 @@ class MLApp(tk.Tk):
         r = recall_score(y_test, y_pred)
         f1 = f1_score(y_test, y_pred)
         return acc, p, r, f1
-
-    
-    def discussion_precision_vs_recall(self):
-        # Discussion about the models
-        discussion_text = (
-            "Precision vs Recall\n"
-            "Precision er forholdet mellem sande positive forudsigelser og det samlede antal forudsagte positive.\n"
-            "Formel for Precision: Precision = TP / (TP + FP)\n\n"
-            "Recall er forholdet mellem sande positive forudsigelser og det samlede antal faktiske positive.\n"
-            "Formel for Recall: Recall = TP / (TP + FN)\n\n"
-            "Hvornår man bør prioritere Precision frem for Recall:\n"
-            "Hvis omkostningen ved en falsk positiv er høj, bør man prioritere Precision. For eksempel i spamfiltrering: at markere en legitim e-mail som spam (falsk positiv) kan være til stor gene for brugeren.\n\n"
-            "Hvornår man bør prioritere Recall frem for Precision:\n"
-            "Hvis omkostningen ved en falsk negativ er høj, bør man prioritere Recall. For eksempel i medicinske diagnoser: at undlade at opdage en sygdom (falsk negativ) kan have alvorlige konsekvenser for patienten."
-        )
-        messagebox.showinfo("Discussion", discussion_text)
 
     def run_cross_val_score(self):
         model = LogisticRegression(max_iter=1000)
@@ -417,6 +431,41 @@ class MLApp(tk.Tk):
 
         acc_bagging, p_bagging, r_bagging, f1_bagging = self.calc_performence_scores(y_test, y_pred_bagging)
         self.show_results("BaggingClassifier", acc_bagging, p_bagging, r_bagging, f1_bagging)
+
+    def learning_curve_decision_tree(self):
+        X_train, X_test, y_train, y_test = train_test_split(data.data, data.target, test_size=0.3, random_state=42)
+        
+        model_dt = DecisionTreeClassifier(max_depth=1)
+
+        model_dt.fit(X_train, y_train)
+
+        train_sizes, train_scores, test_scores = learning_curve(model_dt, X_train, y_train)
+
+        plt.plot(train_sizes, np.mean(train_scores, axis=1), label='Training score')
+        plt.plot(train_sizes, np.mean(test_scores, axis=1), label='Cross-validation score (test scores)')
+        plt.title('Learning Curve (Decision Tree)')
+        plt.xlabel('Training Size')
+        plt.ylabel('Score')
+        plt.legend()
+        plt.show()
+
+    def learning_curve_random_forest(self):
+        X_train, X_test, y_train, y_test = train_test_split(data.data, data.target, test_size=0.3, random_state=42)
+
+        model_rf = RandomForestClassifier(max_depth=1)
+
+        model_rf.fit(X_train, y_train)
+
+        train_sizes, train_scores, test_scores = learning_curve(model_rf, X_train, y_train)
+
+        plt.plot(train_sizes, np.mean(train_scores, axis=1), label='Training score')
+        plt.plot(train_sizes, np.mean(test_scores, axis=1), label='Cross-validation score (test scores)')
+        plt.title('Learning Curve (Decision Tree)')
+        plt.xlabel('Training Size')
+        plt.ylabel('Score')
+        plt.legend()
+        plt.show()
+
 
 # Run the app
 if __name__ == "__main__":
