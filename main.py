@@ -4,6 +4,7 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 import numpy as np
+from sklearn.discriminant_analysis import StandardScaler
 import discussions as discussion
 from sklearn.ensemble import RandomForestClassifier, BaggingClassifier
 from sklearn.svm import SVC
@@ -12,6 +13,7 @@ from sklearn.datasets import load_breast_cancer
 from sklearn.linear_model import LogisticRegression, LinearRegression
 from sklearn.tree import DecisionTreeClassifier, plot_tree
 from sklearn.model_selection import train_test_split, cross_val_score, learning_curve
+from sklearn.decomposition import PCA
 from sklearn.metrics import (
     accuracy_score, confusion_matrix,
     precision_score, recall_score, f1_score,
@@ -37,11 +39,11 @@ class MLApp(tk.Tk):
         self.title("ML GUI – Breast Cancer Analysis")
         self.geometry("1000x400")
 
-        # Task label
+        # model label
         model_label = ttk.Label(self, text="Model Analysis", font=("Arial", 12, "bold"))
         model_label.grid(row=0, column=0, columnspan=5, pady=10)
 
-        # Task buttons
+        # model buttons
         model_buttons = [
             ("Show Dataset", self.show_data),
             ("Run Linear Regression", self.run_linear_regression),
@@ -63,6 +65,8 @@ class MLApp(tk.Tk):
             ("Precision vs Recall Discussion", discussion.discussion_precision_vs_recall),
             ("Bias vs Variance decision tree Discussion", discussion.discussion_bias_variance_trees),
             ("Reduce Dimension with PCA", self.reduce_dimension_with_PCA),
+            ("Visualize Reduced Data", self.visualize_reduced_data),
+            ("Find Best PCA Component Amount", self.find_best_PCA_component_amount),
         ]
         for idx, (text, command) in enumerate(model_buttons):
             row = idx // 5 + 1
@@ -83,7 +87,6 @@ class MLApp(tk.Tk):
             column = idx % 5
             ttk.Button(self, text=text, command=command).grid(row=row, column=column, pady=5, padx=5, sticky="ew")
 
-        
 
     def show_data(self):
         top = tk.Toplevel(self)
@@ -468,10 +471,51 @@ class MLApp(tk.Tk):
         plt.show()
 
     def reduce_dimension_with_PCA(self):
-        from sklearn.decomposition import PCA
         X_reduced = PCA(n_components=10).fit_transform(data.data)
-        messagebox.showinfo("PCA Reduction", f"Reduced dimensions from {data.data.shape[1]} to {X_reduced.shape[1]}")
+        df_reduced = pd.DataFrame(X_reduced) # if we want to see the reduced data
+        messagebox.showinfo("PCA Reduction", f"Reduced dimensions from {data.data.shape} to {X_reduced.shape}")
         return X_reduced
+    
+    def visualize_reduced_data(self):
+
+        # Reduce to 2 dimensions
+        scaler = StandardScaler()
+        X_scaled = scaler.fit_transform(data.data)
+
+        pca = PCA(n_components=2)
+        X_reduced = pca.fit_transform(X_scaled)
+
+        # Calculate explained variance
+        explained_variance = np.sum(pca.explained_variance_ratio_) * 100
+
+        # Plot the reduced data
+        plt.figure(figsize=(8, 6))
+        plt.scatter(X_reduced[:, 0], X_reduced[:, 1], c=data.target, cmap='viridis', edgecolor='k', s=50)
+        plt.title(f"2D PCA Visualization (Explained Variance: {explained_variance:.2f}%)")
+        plt.xlabel("Principal Component 1")
+        plt.ylabel("Principal Component 2")
+        plt.colorbar(label="Target")
+        plt.show()
+    
+    def find_best_PCA_component_amount(self):
+        scaler = StandardScaler()
+        X_scaled = scaler.fit_transform(data.data)
+
+        pca_full = PCA(n_components=30)
+        pca_full.fit(X_scaled)
+
+        cumulative_variance = np.cumsum(pca_full.explained_variance_ratio_)
+
+        plt.figure(figsize=(8, 6))
+        plt.plot(range(1, 31), cumulative_variance, marker='o')
+        plt.axhline(y=0.95, color='r', linestyle='--', label='95% Explained Variance')
+        plt.xlabel('Number of Principal Components')
+        plt.ylabel('Cumulative Explained Variance')
+        plt.title('Explained Variance vs. Number of Components')
+        plt.grid(True)
+        plt.legend()
+        plt.show()
+
 
 # Run the app
 if __name__ == "__main__":
