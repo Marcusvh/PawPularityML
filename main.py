@@ -62,6 +62,7 @@ class MLApp(tk.Tk):
             ("Learning curve (random forest)", self.learning_curve_random_forest),
             ("Precision vs Recall Discussion", discussion.discussion_precision_vs_recall),
             ("Bias vs Variance decision tree Discussion", discussion.discussion_bias_variance_trees),
+            ("Reduce Dimension with PCA", self.reduce_dimension_with_PCA),
         ]
         for idx, (text, command) in enumerate(model_buttons):
             row = idx // 5 + 1
@@ -466,6 +467,11 @@ class MLApp(tk.Tk):
         plt.legend()
         plt.show()
 
+    def reduce_dimension_with_PCA(self):
+        from sklearn.decomposition import PCA
+        X_reduced = PCA(n_components=10).fit_transform(data.data)
+        messagebox.showinfo("PCA Reduction", f"Reduced dimensions from {data.data.shape[1]} to {X_reduced.shape[1]}")
+        return X_reduced
 
 # Run the app
 if __name__ == "__main__":
