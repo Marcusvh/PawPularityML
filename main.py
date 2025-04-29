@@ -21,7 +21,7 @@ from sklearn.metrics import (
 )
 
 # Global data
-data_row_limit = 100
+data_row_limit = 1000
 data = load_breast_cancer()
 data_subset = data.data[:data_row_limit, :]
 data.data = data.data[:data_row_limit, :]
@@ -67,6 +67,8 @@ class MLApp(tk.Tk):
             ("Reduce Dimension with PCA", self.reduce_dimension_with_PCA),
             ("Visualize Reduced Data", self.visualize_reduced_data),
             ("Find Best PCA Component Amount", self.find_best_PCA_component_amount),
+            ("Group with Clustering and Compare", self.group_with_clustering_and_compare),
+            ("KMeans Find Best K", self.kmeans_find_best_k),
         ]
         for idx, (text, command) in enumerate(model_buttons):
             row = idx // 5 + 1
@@ -175,8 +177,6 @@ class MLApp(tk.Tk):
 
     def show_conf_matrix(self):
         if hasattr(self, 'conf_matrix'):
-            import numpy as np
-
             labels = np.array([["True negative (TN)", "False positive (FP)"], ["False negative (FN)", "True positive (TP)"]])
             values = self.conf_matrix
             annot = np.empty_like(values, dtype=object)
@@ -191,15 +191,6 @@ class MLApp(tk.Tk):
             plt.xlabel("Predicted")
             plt.ylabel("Actual")
             plt.show()
-        else:
-            messagebox.showerror("Error", "Run Logistic Regression first.")
-
-    def show_metrics(self):
-        if hasattr(self, 'y_test'):
-            p = precision_score(self.y_test, self.y_pred)
-            r = recall_score(self.y_test, self.y_pred)
-            f1 = f1_score(self.y_test, self.y_pred)
-            messagebox.showinfo("Metrics", f"Precision: {p:.2f}\nRecall: {r:.2f}\nF1-score: {f1:.2f}")
         else:
             messagebox.showerror("Error", "Run Logistic Regression first.")
 
@@ -514,6 +505,73 @@ class MLApp(tk.Tk):
         plt.title('Explained Variance vs. Number of Components')
         plt.grid(True)
         plt.legend()
+        plt.show()
+
+    def group_with_clustering_and_compare(self):
+        from sklearn.cluster import AgglomerativeClustering
+
+        X = StandardScaler().fit_transform(data.data)
+
+        # Apply Agglomerative Clustering with full tree
+        cluster = AgglomerativeClustering(n_clusters=2, compute_full_tree=True)
+        cluster_labels = cluster.fit_predict(X)
+
+        cm = confusion_matrix(data.target, cluster_labels)
+    
+        # Annotate confusion matrix
+        labels = np.array([["True Negative (TN)", "False Positive (FP)"],
+                        ["False Negative (FN)", "True Positive (TP)"]])
+        annot = np.empty_like(cm, dtype=object)
+        for i in range(cm.shape[0]):
+            for j in range(cm.shape[1]):
+                annot[i, j] = f"{labels[i, j]}\n{cm[i, j]}"
+
+        # Plot confusion matrix
+        sns.heatmap(cm, annot=annot, fmt='', cmap='Blues', cbar=False,
+                    xticklabels=["Cluster 0", "Cluster 1"], yticklabels=["Class 0", "Class 1"])
+        plt.title("Confusion Matrix (Agglomerative Clustering)")
+        plt.xlabel("Predicted")
+        plt.ylabel("Actual")
+        plt.tight_layout()
+
+        pca = PCA(n_components=2)
+        X_pca = pca.fit_transform(X)
+
+        plt.figure(figsize=(8, 6))
+        scatter = plt.scatter(X_pca[:, 0], X_pca[:, 1], c=cluster_labels, cmap='coolwarm', edgecolor='k', s=50)
+        plt.title("PCA Scatter Plot of Clusters")
+        plt.xlabel("PCA Component 1")
+        plt.ylabel("PCA Component 2")
+        plt.legend(*scatter.legend_elements(), title="Cluster")
+        plt.tight_layout()
+        plt.show()
+        
+    def kmeans_find_best_k(self):
+        from sklearn.cluster import KMeans
+
+        # Use the elbow method to find the best number of clusters
+        distortions = []
+        K = range(1, 11)
+        for k in K:
+            kmeans = KMeans(n_clusters=k, random_state=42)
+            kmeans.fit(data.data)
+            distortions.append(kmeans.inertia_)
+
+        plt.figure(figsize=(8, 6))
+        plt.plot(K, distortions, marker='o')
+        plt.xlabel('Number of Clusters (k)')
+        plt.ylabel('Distortion (Inertia)')
+        plt.title('Elbow Method for Optimal k')
+        plt.grid(True)
+
+        plt.tight_layout() 
+        plt.subplots_adjust(bottom=0.20) # bottom margin, so there is space the figtext
+
+        plt.figtext(0.5, 0.05, 
+            'Den bedste k værdi er hvor kurven begynder at flade mere ud.\n'
+            'Da desto mindre y-aksen ændre sig, desto mindre værdi får vi for at tilføje endnu en cluster (k).\n'
+            'I dette tilfælde er det 3, dog vil 4 også være en god kandidat. Da kurven flader mere ud efter det punkt.\n',
+            wrap=True, horizontalalignment='center', fontsize=10)
         plt.show()
 
 
